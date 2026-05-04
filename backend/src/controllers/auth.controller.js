@@ -12,7 +12,9 @@ const verificationStore = new Map();
 // Email transporter configuration
 const createTransporter = () => {
   return nodemailer.createTransport({
-    service: "gmail", 
+    host: "smtp.gmail.com",
+    port: 465,        // Force Port 465
+    secure: true,     // Force SSL (true for 465, false for other ports)
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
