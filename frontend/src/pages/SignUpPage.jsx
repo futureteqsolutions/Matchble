@@ -24,13 +24,20 @@ const SignUpPage = () => {
 
   const { isPending, error, signupMutation } = useSignUp();
 
+  const [demoOTP, setDemoOTP] = useState('');
   const handleSendVerification = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/send-verification`, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/send-verification`, {
         email: signupData.email,
       });
-      toast.success("Verification code sent to your email!");
+      const data = response.data;
+      if (data.demoOTP || data.demoMode) {
+        setDemoOTP(data.demoOTP || data.devCode);
+        toast.success(`Demo OTP: ${data.demoOTP || data.devCode}`);
+      } else {
+        toast.success("Verification code sent to your email!");
+      }
       setStep(2);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to send verification code");
@@ -40,7 +47,7 @@ const SignUpPage = () => {
   const handleVerifyCode = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/verify-code`, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/verify-otp`, {
         email: signupData.email,
         code: verificationCode,
       });
@@ -222,11 +229,19 @@ Join thousands of people finding love on Matchgle
           <div className="w-full">
             <form onSubmit={handleVerifyCode}>
               <div className="space-y-4">
-                <div>
+<div>
                   <h2 className="text-xl font-semibold">Verify Your Email</h2>
                   <p className="text-sm opacity-70">
                     Enter the code sent to {signupData.email}
                   </p>
+                  <div className="alert alert-info mb-4 p-3 text-sm">
+                    <span>Demo Mode: OTP shown in toast/console. Production: email sent after domain verification.</span>
+                  </div>
+                  {demoOTP && (
+                    <div className="alert alert-success mb-4">
+                      <span>Demo OTP: <strong>{demoOTP}</strong></span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-control w-full">

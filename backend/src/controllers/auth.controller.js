@@ -3,86 +3,56 @@ import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
+import { sendEmail } from "../lib/resend.js";
 
 // Temporary storage for verification codes (Email -> Code)
 // In a large production app, use Redis. For your project, a Map works great!
 const verificationStore = new Map();
 
-// Email transporter configuration
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,        // Force Port 465
-    secure: true,     // Force SSL (true for 465, false for other ports)
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-};
-
 const sendVerificationEmail = async (email, code) => {
-  try {
-    // Check if credentials exist
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log(`[DEV MODE] SMTP not configured. Code for ${email}: ${code}`);
-      return true; 
-    }
-
-    const transporter = createTransporter();
-
-await transporter.sendMail({
-      from: `"Matchgle" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Verify your Matchgle account",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); padding: 30px; text-align: center;">
-            <h1 style="color: white; margin: 0;">Matchgle</h1>
-          </div>
-          <div style="padding: 30px; background: #ffffff;">
-            <h2 style="color: #333;">Verify Your Email</h2>
-            <p style="color: #666; font-size: 16px;">Thank you for joining Matchgle! Use the code below to complete your registration:</p>
-            <div style="background: #fff5f5; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; border: 1px dashed #ff6b6b;">
-              <span style="font-size: 32px; font-weight: bold; color: #ff6b6b; letter-spacing: 8px;">${code}</span>
-            </div>
-            <p style="color: #999; font-size: 14px; text-align: center;">This code expires in 10 minutes.</p>
-          </div>
+  const params = {
+    from: 'Matchgle <onboarding@resend.dev>',
+    to: [email],
+    subject: "Verify your Matchgle account",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #ff6b6b, #ee5a5a); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">Matchgle</h1>
         </div>
-      `,
-    });
+        <div style="padding: 30px; background: #ffffff;">
+          <h2 style="color: #333;">Verify Your Email</h2>
+          <p style="color: #666; font-size: 16px;">Thank you for joining Matchgle! Use the code below to complete your registration:</p>
+          <div style="background: #fff5f5; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; border: 1px dashed #ff6b6b;">
+            <span style="font-size: 32px; font-weight: bold; color: #ff6b6b; letter-spacing: 8px;">${code}</span>
+          </div>
+          <p style="color: #999; font-size: 14px; text-align: center;">This code expires in 10 minutes.</p>
+        </div>
+      </div>
+    `
+  };
 
-    console.log(`Verification email sent to ${email}`);
-    return true;
-  } catch (error) {
-    console.error("Nodemailer Error:", error);
-    return false;
-  }
+  // TEMP DISABLED: Resend for demo OTP flow
+  console.log(`🔧 [DEMO MODE] OTP for ${email}: ${code}`);
+  return true;
 };
 
 const sendPasswordResetEmail = async (email, resetUrl) => {
-  try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return false;
+  const params = {
+    from: 'Matchgle <onboarding@resend.dev>',
+    to: [email],
+    subject: "Reset your Matchgle password",
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h2>Password Reset</h2>
+        <p>Click the button below to reset your password. This link is valid for 30 minutes.</p>
+        <a href="${resetUrl}" style="background: #ff6b6b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+      </div>
+    `
+  };
 
-const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `"Matchgle" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Reset your Matchgle password",
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>Password Reset</h2>
-          <p>Click the button below to reset your password. This link is valid for 30 minutes.</p>
-          <a href="${resetUrl}" style="background: #ff6b6b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
-        </div>
-      `,
-    });
-    return true;
-  } catch (error) {
-    console.error("Reset Email Error:", error);
-    return false;
-  }
+  // TEMP DISABLED: Resend for demo
+  console.log(`🔧 [DEMO] Reset URL: ${resetUrl}`);
+  return true;
 };
 
 export async function signup(req, res) {
@@ -127,7 +97,7 @@ export async function signup(req, res) {
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
     });
 
@@ -153,7 +123,7 @@ export async function login(req, res) {
     res.cookie("jwt", token, {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
     });
 
@@ -189,15 +159,28 @@ export async function sendVerification(req, res) {
         verificationStore.delete(email);
     }, 10 * 60 * 1000);
 
-    const emailSent = await sendVerificationEmail(email, code);
+    const emailResult = await sendVerificationEmail(email, code);
     
-    if (!emailSent) {
-        return res.status(500).json({ message: "Failed to send verification email" });
+    console.log(`📧 Email result for ${email}:`, emailResult);
+    
+    if (!emailResult) {
+        console.error(`🚫 FAILED to send verification to ${email}. Check resend.js logs above.`);
+        // Dev fallback: Return 200 with code for testing (no real email needed)
+        return res.status(200).json({ 
+          success: true,
+          message: "Verification code ready! (Sandbox mode - check resend.com/domains or use surajpaswan13211@gmail.com)",
+          devMode: true,
+          devCode: code,
+          hint: "Dev code above. Verify with /verify-code.",
+          emailSent: false
+        });
     }
 
-    res.status(200).json({ success: true, message: "Verification code sent to your email!" });
+    console.log(`🎉 Verification flow SUCCESS for ${email}`);
+    res.status(200).json({ success: true, message: "Demo verification ready!", demoMode: true, demoOTP: code });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("💥 sendVerification ERROR:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 }
 
@@ -328,3 +311,5 @@ export async function onboard(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+

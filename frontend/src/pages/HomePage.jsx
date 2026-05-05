@@ -127,22 +127,35 @@ const HomePage = () => {
 
   useEffect(() => {
     const outgoingIds = new Set();
-    if (outgoingFriendReqs && outgoingFriendReqs.length > 0) {
-      outgoingFriendReqs.forEach((req) => {
-        outgoingIds.add(req.recipient._id);
+    if (outgoingFriendReqs && Array.isArray(outgoingFriendReqs)) {
+      outgoingFriendReqs?.forEach((req) => {
+        if (req?.recipient?._id) {
+          outgoingIds.add(req.recipient._id);
+        }
       });
       setOutgoingRequestsIds(outgoingIds);
     }
   }, [outgoingFriendReqs]);
 
-  // Filter out friends from discovery users
+  // Filter out friends from discovery users (also guard against null entries from populate)
   const filteredDiscoveryUsers = useMemo(() => {
-    const friendIds = new Set(friends.map(f => f._id));
-    return recommendedUsers.filter(user => !friendIds.has(user._id));
+    const safeFriends = Array.isArray(friends) ? friends : [];
+    const friendIds = new Set(
+      safeFriends.filter((f) => f?._id).map((f) => f._id)
+    );
+
+    const safeRecommended = Array.isArray(recommendedUsers) ? recommendedUsers : [];
+    return safeRecommended
+      .filter((user) => user && user._id)
+      .filter((user) => !friendIds.has(user._id));
   }, [recommendedUsers, friends]);
 
-  // Display users based on search or discovery
-  const displayUsers = isSearching ? searchResults : filteredDiscoveryUsers;
+  // Display users based on search or discovery (ensure map() never receives null)
+  const displayUsers = useMemo(() => {
+    const list = isSearching ? searchResults : filteredDiscoveryUsers;
+    const safeList = Array.isArray(list) ? list : [];
+    return safeList.filter((u) => u && u._id);
+  }, [isSearching, searchResults, filteredDiscoveryUsers]);
 
   // HELPER: To render images correctly from the backend
   const renderImage = (imagePath) => {
@@ -206,7 +219,7 @@ const HomePage = () => {
             {/* AUTOCOMPLETE DROPDOWN */}
             {showDropdown && suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-xl shadow-xl z-50 max-h-64 overflow-y-auto">
-                {suggestions.map((user) => (
+                {suggestions.filter((user) => user && user._id).map((user) => (
                   <Link
                     key={user._id}
                     to={`/profile/${user._id}`}
@@ -307,7 +320,7 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayUsers.map((user) => {
               const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
-              const isFriend = friends.some(f => f._id === user._id);
+              const isFriend = friends?.filter(f => f?._id).some(f => f._id === user._id);
 
               return (
                 <div
@@ -403,3 +416,5 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+

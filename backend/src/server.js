@@ -32,7 +32,12 @@ if (!fs.existsSync(uploadDir)) {
 
 app.use(
   cors({
-    origin: "https://matchble.onrender.com",
+    origin: [
+      "https://matchble.onrender.com",
+      "http://localhost:5001",
+      "http://localhost:5173",
+      "http://localhost:3000"
+    ],
     credentials: true,
   })
 );
@@ -49,13 +54,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/upload", uploadRoutes);
 
- if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../../frontend/dist")));
+ app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 
   app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../../frontend", "dist", "index.html"));
 });
-}
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

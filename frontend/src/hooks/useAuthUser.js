@@ -6,9 +6,16 @@ const useAuthUser = () => {
     queryKey: ["authUser"],
     queryFn: getAuthUser,
     retry: false,
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000, // 5 minutes - but auth state should be refetched on mount
+    refetchOnMount: true,
   });
 
-  return { isLoading: authUser.isLoading, authUser: authUser.data?.user };
+  // Return null safety - authUser.data can be null if API fails
+  // This prevents "Cannot read properties of null" errors
+  return { 
+    isLoading: authUser.isLoading, 
+    authUser: authUser.data ?? null 
+  };
 };
 export default useAuthUser;
+

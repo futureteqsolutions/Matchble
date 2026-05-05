@@ -29,9 +29,9 @@ const Navbar = () => {
     refetchInterval: 30000,
   });
 
-  const incomingRequests = friendRequestsData?.incomingReqs || [];
+  const incomingRequests = (friendRequestsData?.incomingReqs || []).filter(req => req && req._id);
   const friendRequestCount = incomingRequests.length;
-  const notificationCount = unreadData?.friendRequests || friendRequestCount;
+  const notificationCount = (unreadData?.friendRequests || 0) || friendRequestCount;
   const messageCount = unreadData?.messages || 0;
 
   // Profile Picture Helper
@@ -188,4 +188,5 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
 

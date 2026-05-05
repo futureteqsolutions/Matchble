@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "react-router-dom";
 import useAuthUser from "../hooks/useAuthUser";
 import { BellIcon, HeartIcon, UsersIcon, MessageSquareIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -56,15 +56,19 @@ const Sidebar = () => {
       }
     };
 
-    const listener = client.on('message.new', handleMessageNew);
+    const listener = client.on("message.new", handleMessageNew);
 
     // Initial total count from client
     if (client.user?.unread_count !== undefined) {
-      setTotalUnread(client.unread_count || 0);
+      setTotalUnread(client.user.unread_count || 0);
     }
 
     return () => {
-      listener.unsubscribe();
+      try {
+        listener?.unsubscribe?.();
+      } catch (e) {
+        // ignore
+      }
     };
   }, [authUser?._id]);
 
@@ -117,7 +121,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-[300px] flex-shrink-0 flex flex-col h-full bg-base-200 border-r border-base-300 hidden lg:flex">
+    <aside className="w-[300px] flex-shrink-0 flex flex-col h-full bg-base-200 border-r border-base-300 lg:flex">
       {/* Top Section (Logo, Chat, Notifications) - auto height */}
       <div className="flex flex-col p-5 border-b border-base-300">
 

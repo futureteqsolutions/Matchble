@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { acceptFriendRequest, rejectFriendRequest, getFriendRequests } from "../lib/api";
 import { BellIcon, ClockIcon, MessageSquareIcon, UserCheckIcon, XIcon } from "lucide-react";
 import NoNotificationsFound from "../components/NoNotificationsFound";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 const NotificationsPage = () => {
   const queryClient = useQueryClient();
@@ -130,17 +130,17 @@ const NotificationsPage = () => {
                         <div className="flex items-start gap-3">
                           <div className="avatar mt-1 size-10 rounded-full">
                             <img
-                              src={notification.recipient.profilePic}
-                              alt={notification.recipient.fullName}
+                              src={notification.recipient?.profilePic || `https://avatar.iran.liara.run/public/1.png`}
+                              alt={notification.recipient?.fullName || "Unknown"}
                               onError={(e) => {
                                 e.target.src = `https://avatar.iran.liara.run/public/1.png`;
                               }}
                             />
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold">{notification.recipient.fullName}</h3>
+                            <h3 className="font-semibold">{notification.recipient?.fullName || 'Unknown'}</h3>
                             <p className="text-sm my-1">
-                              {notification.recipient.fullName} accepted your friend request
+                              {notification.recipient?.fullName || 'Unknown'} accepted your friend request
                             </p>
                             <p className="text-xs flex items-center opacity-70">
                               <ClockIcon className="h-3 w-3 mr-1" />
@@ -151,7 +151,7 @@ const NotificationsPage = () => {
                             <MessageSquareIcon className="h-3 w-3 mr-1" />
                             New Match
                           </div>
-                          <Link to={`/chat/${notification.recipient._id}`} className="btn btn-secondary btn-sm">
+                          <Link to={notification.recipient?._id ? `/chat/${notification.recipient._id}` : '/'} className={`btn btn-secondary btn-sm ${!notification.recipient?._id ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}>
                             <MessageSquareIcon className="size-4 mr-1" />
                             Message
                           </Link>
@@ -172,4 +172,6 @@ const NotificationsPage = () => {
     </div>
   );
 };
+
 export default NotificationsPage;
+

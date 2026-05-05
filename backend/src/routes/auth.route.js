@@ -24,6 +24,7 @@ router.post("/onboarding", protectRoute, onboard);
 // Email verification routes
 router.post("/send-verification", sendVerification);
 router.post("/verify-code", verifyCode);
+router.post("/verify-otp", verifyCode);
 
 // Password reset routes
 router.post("/forgot-password", forgotPassword);

@@ -36,7 +36,7 @@ export async function getMyFriends(req, res) {
       .select("friends")
       .populate("friends", "fullName profilePic age gender location isOnline");
 
-    res.status(200).json(user.friends);
+    res.status(200).json((user.friends || []).filter(friend => friend && friend._id != null));
   } catch (error) {
     console.error("Error in getMyFriends controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -156,15 +156,17 @@ export async function rejectFriendRequest(req, res) {
 
 export async function getFriendRequests(req, res) {
   try {
-    const incomingReqs = await FriendRequest.find({
+  let incomingReqs = await FriendRequest.find({
       recipient: req.user.id,
       status: "pending",
     }).populate("sender", "fullName profilePic age gender location");
+    incomingReqs = incomingReqs.filter(req => req.sender !== null);
 
-    const acceptedReqs = await FriendRequest.find({
+    let acceptedReqs = await FriendRequest.find({
       sender: req.user.id,
       status: "accepted",
     }).populate("recipient", "fullName profilePic");
+    acceptedReqs = acceptedReqs.filter(req => req.recipient !== null);
 
     res.status(200).json({ incomingReqs, acceptedReqs });
   } catch (error) {
@@ -175,10 +177,11 @@ export async function getFriendRequests(req, res) {
 
 export async function getOutgoingFriendReqs(req, res) {
   try {
-    const outgoingRequests = await FriendRequest.find({
+    let outgoingRequests = await FriendRequest.find({
       sender: req.user.id,
       status: "pending",
     }).populate("recipient", "fullName profilePic age gender location");
+    outgoingRequests = outgoingRequests.filter(req => req.recipient !== null);
 
     res.status(200).json(outgoingRequests);
   } catch (error) {

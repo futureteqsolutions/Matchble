@@ -17,10 +17,12 @@ export const logout = async () => {
 
 export const getAuthUser = async () => {
   try {
+    console.log('[DEBUG API] Fetching /auth/me...');
     const res = await axiosInstance.get("/auth/me");
+    console.log('[DEBUG API] /auth/me success:', res.data);
     return res.data;
   } catch (error) {
-    console.log("Error in getAuthUser:", error);
+    console.error('[DEBUG API] /auth/me ERROR:', error.response?.status, error.response?.data || error.message);
     return null;
   }
 };
@@ -32,7 +34,7 @@ export const completeOnboarding = async (userData) => {
 
 export async function getUserFriends() {
   const response = await axiosInstance.get("/users/friends");
-  return response.data;
+  return response.data.filter(friend => friend != null && friend._id != null);
 }
 
 export async function getRecommendedUsers(genderFilter = "all") {
